@@ -159,7 +159,17 @@ void ReadBlock(const FunctionCallbackInfo<Value>& args) {
   int32_t len = args[1]->Int32Value();
   uint8_t data[len]; 
   Local<Value> err = Local<Value>::New(isolate, Null(isolate));
+
+#if( NODE_MAJOR_VERSION == 4 )
+  MaybeLocal< Object > mlocObj = node::Buffer::New(isolate, len);
+  Local< Object > buffer;
+  if (mlocObj.IsEmpty() || !mlocObj.ToLocal(&buffer)) {
+    isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Failed to allocate a new Buffer.")));
+    return;
+  } 
+#else 
   Local<Object> buffer = node::Buffer::New(len);
+#endif
 
   while (fd > 0) {
     if (i2c_smbus_read_i2c_block_data(fd, cmd, len, data) != len) {
